@@ -7,6 +7,8 @@ This plugin includes the Mali Offline Compiler copied from Arm Performance Studi
 1. Assets -> Shadalyze -> Analyze Shader Performance ( For Shader, ShaderVariantCollection, Material assets)
 2. Window -> Analysis -> Frame Debugger Shadalyze ( Analyze the compiled shader variant in editor according to shader name, pass name and keywords in Frame Debugger, not the real shader executed on remote device. )
 
+![Screenshot](/.sample/frameDebugger.png?raw=true "Screenshot")
+
 ## TODO
 1. Analyze when Shader build processing, it requires an efficient shader caching way because the current shader compilation and analysis process takes a long time.
 2. performance data analysis for amounts of shader variants ( require parser of analysis report )
