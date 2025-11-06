@@ -22,7 +22,8 @@ namespace Shadalyze.Editor.Data
         public string sha256 { get; private set; }
         public string VertCode { get; private set; }
         public string FragCode { get; private set; }
-        public string AnalyzeResult { get; private set; }
+        public string VertReport { get; private set; }
+        public string FragReport { get; private set; }
         
         public ShaderCompileRequest(Shader shaderObject, int subshaderIndex, int passIndex, string passName, string[] shaderKeywords)
         {
@@ -34,7 +35,8 @@ namespace Shadalyze.Editor.Data
             sha256 = null;
             VertCode = null;
             FragCode = null;
-            AnalyzeResult = null;
+            VertReport = null;
+            FragReport = null;
         }
 
         public ShaderCompileRequest(Shader shaderObject, ShaderSnippetData snippet, ShaderCompilerData variant) : this(
@@ -110,9 +112,8 @@ namespace Shadalyze.Editor.Data
             
             // TODO: There is no need to compute sha256 here properly, the most cost function is compiling variant but there are no good way to deduplication before compiling it.
             sha256 = ShaderCompileDataManager.GetSHA256(variantCompileInfo.ShaderData);
-            if (ShaderCompileDataManager.IsShaderCompileCodeInCache(sha256)) return true;
             bool success = UnityShaderCompileDataParser.ParseShader(variantCompileInfo.ShaderData, out var vertCode, out var fragCode);
-            if (success)
+            if (success && !ShaderCompileDataManager.IsShaderCompileCodeInCache(sha256))
             {
                 string path = $"{ShadalyzeGlobalSettings.CompileCodePath}/{sha256}";
                 ShaderCompileDataManager.DumpToFile(path + ".vert", vertCode, vertCode.Length * sizeof(char));
@@ -128,43 +129,19 @@ namespace Shadalyze.Editor.Data
         /// Get the analysis report text.
         /// </summary>
         /// <returns> The text of analysis report, return null if analysis is failed. </returns>
-        public string Analyze()
+        public bool Analyze()
         {
             if (MaliOfflineCompilerWrapper.Analyze($"{ShadalyzeGlobalSettings.CompileCodePath}/{sha256}.vert",
                     out var vertexAnalysisReport) &&
                 MaliOfflineCompilerWrapper.Analyze($"{ShadalyzeGlobalSettings.CompileCodePath}/{sha256}.frag",
                     out var fragAnalysisReport))
             {
-                string result = default;
-
-                result += $"Shader: {ShaderObject.name}\n";
-
-                result += $"PassName: {PassName}\n";
-                
-                result += $"Keywords: {String.Join(' ', ShaderKeywords)}\n\n";
-                
-                result += "///////////////////////////////////////\n" +
-                          "//////// Vertex Analysis Report ///////\n" +
-                          "///////////////////////////////////////\n";
-                
-                result += vertexAnalysisReport;
-                
-                result += "\n\n";
-                
-                result += "///////////////////////////////////////\n" +
-                          "/////// Fragment Analysis Report //////\n" +
-                          "///////////////////////////////////////\n";
-                
-                result += fragAnalysisReport;
-                
-                result += "\n\n";
-                
-                AnalyzeResult = result;
-
-                return AnalyzeResult;
+                this.VertReport = vertexAnalysisReport;
+                this.FragReport = fragAnalysisReport;
+                return true;
             }
             
-            return null;
+            return false;
         }
     }
 }

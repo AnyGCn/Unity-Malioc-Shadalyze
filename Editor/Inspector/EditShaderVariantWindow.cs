@@ -278,11 +278,14 @@ namespace Shadalyze.Editor
                     foreach (var compileRequest in compileRequests)
                     {
                         compileRequest.Compile();
-                        string result = compileRequest.Analyze();
-                        string reportPath = $"{ShadalyzeGlobalSettings.CompileCodePath}/{compileRequest.ShaderObject.name.Replace('/', '-')}-{compileRequest.PassName}-{compileRequest.sha256}.txt";
-                        ShaderCompileDataManager.DumpToFile(reportPath, result, result.Length);
-                        if (!string.IsNullOrEmpty(reportPath))
-                            Application.OpenURL("file://" + reportPath);
+                        if (compileRequest.Analyze())
+                        {
+                            string reportPath = $"{ShadalyzeGlobalSettings.CompileCodePath}/{compileRequest.ShaderObject.name.Replace('/', '-')}-{compileRequest.PassName}-{compileRequest.sha256}.txt";
+                            string result = compileRequest.VertReport + "\n --------------------------------- \n" + compileRequest.FragReport;
+                            ShaderCompileDataManager.DumpToFile(reportPath, result, result.Length);
+                            if (!string.IsNullOrEmpty(reportPath))
+                                Application.OpenURL("file://" + reportPath);
+                        }
                     }
                     Close();
                     GUIUtility.ExitGUI();
