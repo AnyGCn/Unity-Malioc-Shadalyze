@@ -38,11 +38,24 @@ namespace Shadalyze.Editor.Wrapper
                 frameDebuggerEventData.m_ShaderInfo.m_Keywords.Select(k => k.m_Name).ToArray();
             return frameDebuggerEventData;
         }
+
+        public static FrameDebuggerEvent GetFrameEvent(int index)
+        {
+            return GetFrameEvents()[index];
+        }
+        
+        public static FrameDebuggerEvent[] GetFrameEvents()
+        {
+            object result = GetFrameEventsInternal.Invoke(null, null);
+            return UnsafeUtility.As<object, FrameDebuggerEvent[]>(ref result);
+        }
         
         // the reflection of FrameDebuggerUtility
         private static int limit => (int)limitProperty.GetValue(null);
         private static Type FrameDebuggerUtilityClass = typeof(EditorUtility).Assembly.GetType("UnityEditorInternal.FrameDebuggerInternal.FrameDebuggerUtility");
         private static MethodInfo GetFrameEventDataInternal = FrameDebuggerUtilityClass.GetMethod(nameof(GetFrameEventData));
+        private static MethodInfo GetFrameEventsInternal = FrameDebuggerUtilityClass.GetMethod(nameof(GetFrameEvents));
+
         private static PropertyInfo limitProperty = FrameDebuggerUtilityClass.GetProperty("limit");
         
         // the reflection of FrameDebuggerEventData
@@ -62,6 +75,61 @@ namespace Shadalyze.Editor.Wrapper
         private static FieldInfo ShaderInfoField = FrameDebuggerEventDataClass.GetField("m_ShaderInfo");
     }
 
+    // match enum FrameEventType on C++ side!
+    // match kFrameEventTypeNames names array!
+    internal enum FrameEventType
+    {
+        // ReSharper disable InconsistentNaming
+        ClearNone = 0,
+        ClearColor,
+        ClearDepth,
+        ClearColorDepth,
+        ClearStencil,
+        ClearColorStencil,
+        ClearDepthStencil,
+        ClearAll,
+        SetRenderTarget,
+        ResolveRT,
+        ResolveDepth,
+        GrabIntoRT,
+        StaticBatch,
+        DynamicBatch,
+        Mesh,
+        DynamicGeometry,
+        GLDraw,
+        SkinOnGPU,
+        DrawProcedural,
+        DrawProceduralIndirect,
+        DrawProceduralIndexed,
+        DrawProceduralIndexedIndirect,
+        ComputeDispatch,
+        RayTracingDispatch,
+        PluginEvent,
+        InstancedMesh,
+        BeginSubpass,
+        SRPBatch,
+        HierarchyLevelBreak,
+        HybridBatch,
+        ConfigureFoveatedRendering,
+        // ReSharper restore InconsistentNaming
+    }
+    
+    internal class FrameDebuggerHelper
+    {
+        internal static bool IsAClearEvent(FrameEventType eventType) => eventType >= FrameEventType.ClearNone && eventType <= FrameEventType.ClearAll;
+        internal static bool IsAResolveEvent(FrameEventType eventType) => eventType == FrameEventType.ResolveRT || eventType == FrameEventType.ResolveDepth;
+        internal static bool IsAComputeEvent(FrameEventType eventType) => eventType == FrameEventType.ComputeDispatch;
+        internal static bool IsARayTracingEvent(FrameEventType eventType) => eventType == FrameEventType.RayTracingDispatch;
+    }
+    
+    // Match C++ MonoFrameDebuggerEvent memory layout!
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct FrameDebuggerEvent
+    {
+        public FrameEventType m_Type;
+        public UnityEngine.Object m_Obj;
+    }
+    
     internal class FrameDebuggerEventData
     {
         // required properties 

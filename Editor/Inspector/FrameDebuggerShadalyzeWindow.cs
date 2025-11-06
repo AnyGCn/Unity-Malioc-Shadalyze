@@ -51,9 +51,16 @@ namespace Shadalyze.Editor
             {
                 if (GUILayout.Button("Analyze performance"))
                 {
-                    eventData = FrameDebuggerUtility.GetFrameEventData(FrameDebuggerUtility.curEventIndex);
+                    var curEventIndex = FrameDebuggerUtility.curEventIndex;
+                    eventData = FrameDebuggerUtility.GetFrameEventData(curEventIndex);
+                    FrameDebuggerEvent frameEvent = FrameDebuggerUtility.GetFrameEvent(curEventIndex);
+                    FrameEventType eventType = frameEvent.m_Type;
+                    bool isClearEvent = FrameDebuggerHelper.IsAClearEvent(eventType);
+                    bool isComputeEvent = FrameDebuggerHelper.IsAComputeEvent(eventType);
+                    bool isRayTracingEvent = FrameDebuggerHelper.IsARayTracingEvent(eventType);
+                    
                     // TODO: support compute shader and detect real draw event
-                    if (!String.IsNullOrEmpty(eventData.m_RealShaderName))
+                    if (!isClearEvent && !isComputeEvent && !isRayTracingEvent)
                     {
                         // draw pass
                         m_CompiledRequest = new ShaderCompileRequest(Shader.Find(eventData.m_RealShaderName),
@@ -91,7 +98,7 @@ namespace Shadalyze.Editor
             
             if (!m_CompiledRequest.ShaderObject)
             {
-                EditorGUILayout.LabelField("Start Frame Debugger and capture a draw call or dispatch call.", m_TextStyle);
+                EditorGUILayout.LabelField("Start Frame Debugger and capture a draw call (compute shader support is on the way.)", m_TextStyle);
                 return;
             }
             
